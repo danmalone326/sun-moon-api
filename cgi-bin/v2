@@ -1,0 +1,28 @@
+#!/usr/bin/env python3
+import os, sys
+from urllib.parse import parse_qs
+sys.path.insert(0, os.path.join(os.path.dirname(__file__), "..", "src"))
+from sun_moon_api.api import dumps, error_response, handle
+from sun_moon_api.errors import APIError
+
+def main() -> None:
+    params = {key: values[-1] for key, values in parse_qs(os.environ.get("QUERY_STRING", ""), keep_blank_values=True).items()}
+    path = os.environ.get("PATH_INFO", "/v2")
+    if path not in ("", "/", "/v2"):
+        status, payload = 404, {"error":"not_found","message":"Unknown route.","docs":"https://sunrise-sunset.org/api"}
+    else:
+        try: status, payload = handle(params, os.environ.get("SUN_MOON_EPHEMERIS", os.path.join(os.path.dirname(__file__), "..", "de440s.bsp")))
+        except APIError as exc: status, payload = error_response(exc)
+        except (FileNotFoundError, OSError) as exc:
+            print(f"sun-moon-api: {exc}", file=sys.stderr)
+            status, payload = 500, {"error":"server_error","message":"The local ephemeris is unavailable.","docs":"https://sunrise-sunset.org/api"}
+        except Exception as exc:
+            print(f"sun-moon-api: {exc}", file=sys.stderr)
+            status, payload = 500, {"error":"server_error","message":"An internal error occurred.","docs":"https://sunrise-sunset.org/api"}
+    print(f"Status: {status}")
+    print("Content-Type: application/json; charset=utf-8")
+    print()
+    print(dumps(payload))
+
+if __name__ == "__main__": main()
+

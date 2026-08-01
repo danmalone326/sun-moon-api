@@ -1,0 +1,5 @@
+numpy>=1.26,<3
+skyfield>=1.53,<2
+timezonefinder>=6.5,<7
+pytest>=8,<9
+
