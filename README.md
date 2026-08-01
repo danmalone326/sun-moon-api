@@ -6,6 +6,8 @@ An offline Python CGI implementation of the [Sunrise-Sunset.org v2 API](https://
 
 `/v2` accepts `lat`, `lng`, `date`, `date_start`/`date_end`, `tz`, and `time_format=iso8601|unix`. It preserves the v2 single-day and range shapes, field names, local-time ISO values, Unix event timestamps, nullable events, twilight definitions, polar statuses, and error object `{error,message,docs}`. Date ranges are limited to 366 days. `time=HH:MM[:SS]` or an ISO timestamp adds `observer_position`; it is intentionally rejected for ranges. Each day also contains additive `lunar_position`, and `solar_position` includes the extra azimuth fields requested by this project.
 
+The supported compatibility floor is Python 3.7. On Python 3.7–3.9 the dependency file selects the older Skyfield/timezonefinder/NumPy stack; Python 3.7 is end-of-life, so upgrading the operating system remains strongly recommended.
+
 The implementation uses Skyfield topocentric positions, standard USNO-style solar rise/set at -0.8333°, lunar upper-limb/refraction rise/set at -0.5667°, and Skyfield apparent positions for refraction. The public service may use different ephemeris revisions or operational rounding, so exact seconds can differ slightly. Timezone detection uses the maintained `timezonefinder` package and its bundled offline polygon database; explicit IANA zones use Python’s system tzdata. Coordinates where no polygon exists fall back to UTC.
 
 ## Setup and tests

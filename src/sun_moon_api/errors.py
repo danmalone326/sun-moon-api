@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 class APIError(Exception):
     """A client-facing validation error."""
 
