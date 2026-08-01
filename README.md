@@ -4,7 +4,7 @@ An offline Python CGI implementation of the [Sunrise-Sunset.org v2 API](https://
 
 ## Compatibility and extensions
 
-`/v2` accepts `lat`, `lng`, `date`, `date_start`/`date_end`, `tz`, and `time_format=iso8601|unix`. It preserves the v2 single-day and range shapes, field names, local-time ISO values, Unix event timestamps, nullable events, twilight definitions, polar statuses, and error object `{error,message,docs}`. Date ranges are limited to 366 days. `time=HH:MM[:SS]` or an ISO timestamp adds `observer_position`; it is intentionally rejected for ranges. Each day also contains additive `lunar_position`, and `solar_position` includes the extra azimuth fields requested by this project.
+`/sun-moon-api/v2` accepts `lat`, `lng`, `date`, `date_start`/`date_end`, `tz`, and `time_format=iso8601|unix`. It preserves the v2 single-day and range shapes, field names, local-time ISO values, Unix event timestamps, nullable events, twilight definitions, polar statuses, and error object `{error,message,docs}`. Date ranges are limited to 366 days. `time=HH:MM[:SS]` or an ISO timestamp adds `observer_position`; it is intentionally rejected for ranges. Each day also contains additive `lunar_position`, and `solar_position` includes the extra azimuth fields requested by this project.
 
 ### API extensions
 
@@ -72,10 +72,10 @@ QUERY_STRING='lat=36.72016&lng=-4.42034&date=2026-08-01&time=06:15:00' PATH_INFO
 Example requests:
 
 ```text
-/v2?lat=36.72016&lng=-4.42034
-/v2?lat=40.7128&lng=-74.0060&date=2026-08-01&tz=America/Los_Angeles&time_format=unix
-/v2?lat=36.72016&lng=-4.42034&date=2026-08-01&time=06:15:00
-/v2?lat=36.72016&lng=-4.42034&date_start=2026-01-01&date_end=2026-01-31
+/sun-moon-api/v2?lat=36.72016&lng=-4.42034
+/sun-moon-api/v2?lat=40.7128&lng=-74.0060&date=2026-08-01&tz=America/Los_Angeles&time_format=unix
+/sun-moon-api/v2?lat=36.72016&lng=-4.42034&date=2026-08-01&time=06:15:00
+/sun-moon-api/v2?lat=36.72016&lng=-4.42034&date_start=2026-01-01&date_end=2026-01-31
 ```
 
 ## Apache on Raspberry Pi
@@ -95,5 +95,5 @@ sudo a2enconf sun-moon-api
 sudo systemctl reload apache2
 ```
 
-Apache does not inherit an activated shell environment. For this deployment, change the first line of `/var/www/sun-moon-api/cgi-bin/v2` to `#!/var/www/sun-moon-api/.venv/bin/python`, or use a small launcher that invokes that interpreter. The CGI wrapper must use the same virtualenv where Skyfield and the other dependencies were installed. Ensure the ephemeris is readable by the Apache user. A response is then available at `http://pi-address/v2?...`.
+Apache does not inherit an activated shell environment. For this deployment, change the first line of `/var/www/sun-moon-api/cgi-bin/v2` to `#!/var/www/sun-moon-api/.venv/bin/python`, or use a small launcher that invokes that interpreter. The CGI wrapper must use the same virtualenv where Skyfield and the other dependencies were installed. Ensure the ephemeris is readable by the Apache user. A response is then available at `http://pi-address/sun-moon-api/v2?...`.
 
