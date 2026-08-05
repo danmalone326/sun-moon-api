@@ -26,11 +26,17 @@ def _time_window(calc_date: date, tz, ts):
     end = start + timedelta(days=2)
     return ts.from_datetime(start), ts.from_datetime(end)
 
-def _event(observer, body, t0, t1, rising: bool, horizon: float):
+def _select_events(times, ok, calc_date: date, tz, rising: bool):
+    selected = [times[i] for i, valid in enumerate(ok) if bool(valid)]
+    selected = [t for t in selected if _dt(t, tz).date() == calc_date]
+    if not selected:
+        return None
+    return selected[0] if rising else selected[-1]
+
+def _event(observer, body, t0, t1, rising: bool, horizon: float, calc_date: date, tz):
     fn = almanac.find_risings if rising else almanac.find_settings
     times, ok = fn(observer, body, t0, t1, horizon_degrees=horizon)
-    selected = [times[i] for i, valid in enumerate(ok) if bool(valid)]
-    return selected[0] if selected else None
+    return _select_events(times, ok, calc_date, tz, rising)
 
 def _dt(t, tz):
     return t.utc_datetime().astimezone(tz) if t is not None else None
@@ -50,8 +56,8 @@ def calculate_day(engine: Ephemeris, calc_date: date, tz, lat: float, lng: float
     events: dict[str, Any] = {}
     solar_times: dict[str, Any] = {}
     for key, horizon in SOLAR_HORIZONS.items():
-        rising = _event(observer, sun, t0, t1, True, horizon)
-        setting = _event(observer, sun, t0, t1, False, horizon)
+        rising = _event(observer, sun, t0, t1, True, horizon, calc_date, tz)
+        setting = _event(observer, sun, t0, t1, False, horizon, calc_date, tz)
         solar_times[key] = (rising, setting)
     sunrise, sunset = solar_times["sunrise"]
     civil_begin, civil_end = solar_times["civil"]
@@ -60,8 +66,8 @@ def calculate_day(engine: Ephemeris, calc_date: date, tz, lat: float, lng: float
     # find_transits returns meridian crossings; the first valid crossing in this window is noon.
     transit_times = almanac.find_transits(observer, sun, t0, t1)
     noon_t = transit_times[0] if len(transit_times) else None
-    moonrise_t = _event(observer, moon, t0, t1, True, MOON_HORIZON)
-    moonset_t = _event(observer, moon, t0, t1, False, MOON_HORIZON)
+    moonrise_t = _event(observer, moon, t0, t1, True, MOON_HORIZON, calc_date, tz)
+    moonset_t = _event(observer, moon, t0, t1, False, MOON_HORIZON, calc_date, tz)
     local = lambda t: _dt(t, tz)
     noon = local(noon_t)
     sunrise_l, sunset_l = local(sunrise), local(sunset)
@@ -84,12 +90,12 @@ def calculate_day(engine: Ephemeris, calc_date: date, tz, lat: float, lng: float
     moonrise_az, _ = _azalt(observer, moon, moonrise_t)
     moonset_az, _ = _azalt(observer, moon, moonset_t)
     def altitude_event(target, horizon, rising):
-        return local(_event(observer, target, t0, t1, rising, horizon))
+        return local(_event(observer, target, t0, t1, rising, horizon, calc_date, tz))
     golden_m_begin = altitude_event(sun, 6.0, True)  # overwritten by exact -4 crossing below
     # The golden/blue boundaries are ordered crossings of -6, -4, +6 in this day window.
     def crossings(horizon):
-        a = _event(observer, sun, t0, t1, True, horizon)
-        b = _event(observer, sun, t0, t1, False, horizon)
+        a = _event(observer, sun, t0, t1, True, horizon, calc_date, tz)
+        b = _event(observer, sun, t0, t1, False, horizon, calc_date, tz)
         return local(a), local(b)
     minus4_r, minus4_s = crossings(-4.0)
     plus6_r, plus6_s = crossings(6.0)

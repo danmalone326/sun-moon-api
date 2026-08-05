@@ -1,7 +1,8 @@
-from datetime import date
+from datetime import date, datetime, timezone
 import json
 import pytest
 from sun_moon_api.api import _parse_date, _parse_time, error_response
+from sun_moon_api.astronomy import _select_events
 from sun_moon_api.errors import APIError
 from sun_moon_api.timezone import get_timezone
 
@@ -30,3 +31,23 @@ def test_invalid_timezone_error_shape():
     status, body=error_response(APIError("invalid_tz", "bad"))
     assert status == 400 and set(body) == {"error","message","docs"}
 
+
+
+class FakeSkyfieldTime:
+    def __init__(self, value):
+        self.value = value
+
+    def utc_datetime(self):
+        return self.value
+
+def test_events_from_adjacent_date_are_excluded():
+    from zoneinfo import ZoneInfo
+    tz = ZoneInfo("America/Los_Angeles")
+    requested = date(2026, 8, 6)
+    times = [
+        FakeSkyfieldTime(datetime(2026, 8, 6, 21, 36, tzinfo=timezone.utc)),
+        FakeSkyfieldTime(datetime(2026, 8, 7, 7, 32, tzinfo=timezone.utc)),
+    ]
+    ok = [True, True]
+    assert _select_events(times[1:], [True], requested, tz, True) is None
+    assert _select_events(times, ok, requested, tz, False).value == times[0].value
